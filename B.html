@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f45c9f" />
+  <title>Bestie Hangout Planner</title>
+
+  <style>
+    :root {
+      --pink-1: #fff0f7;
+      --pink-2: #ffd2e7;
+      --pink-3: #ff9fc8;
+      --pink-4: #f45c9f;
+      --pink-5: #c93679;
+      --purple: #9a6ad8;
+      --text: #5b2943;
+      --white: #ffffff;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--pink-1);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      padding:
+        calc(14px + var(--safe-top))
+        calc(14px + var(--safe-right))
+        calc(14px + var(--safe-bottom))
+        calc(14px + var(--safe-left));
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, #ffe4f1 0 18%, transparent 19%),
+        radial-gradient(circle at bottom right, #f5d8ff 0 16%, transparent 17%),
+        linear-gradient(135deg, var(--pink-1), var(--pink-2), #f7e8ff);
+      overflow-x: hidden;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+
+    .wrap {
+      width: 100%;
+      min-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 28px);
+      display: grid;
+      place-items: center;
+    }
+
+    .card {
+      width: min(100%, 680px);
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 28px;
+      padding: clamp(20px, 4vw, 32px);
+      box-shadow: 0 22px 55px rgba(201, 54, 121, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before,
+    .card::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.16;
+      pointer-events: none;
+    }
+
+    .card::before {
+      width: 170px;
+      height: 170px;
+      background: var(--pink-3);
+      top: -65px;
+      right: -55px;
+    }
+
+    .card::after {
+      width: 140px;
+      height: 140px;
+      background: #d9b9ff;
+      bottom: -55px;
+      left: -45px;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .emoji {
+      font-size: clamp(42px, 10vw, 56px);
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      color: var(--pink-5);
+      font-size: clamp(28px, 8vw, 44px);
+      line-height: 1.05;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      color: var(--pink-5);
+      font-size: clamp(21px, 5vw, 28px);
+    }
+
+    p {
+      line-height: 1.5;
+    }
+
+    .subtitle {
+      margin: 0 auto 22px;
+      max-width: 520px;
+      color: #7c4b65;
+      font-size: clamp(16px, 4vw, 18px);
+    }
+
+    .question-box {
+      margin-top: 18px;
+      padding: clamp(20px, 5vw, 28px);
+      background: linear-gradient(135deg, #fff8fc, #ffe6f1);
+      border-radius: 22px;
+    }
+
+    .button-area {
+      position: relative;
+      width: 100%;
+      min-height: 180px;
+      margin-top: 24px;
+    }
+
+    button {
+      min-height: 50px;
+      border: none;
+      border-radius: 16px;
+      padding: 14px 26px;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    #yesBtn,
+    #confirmBtn,
+    #restartBtn {
+      background: linear-gradient(135deg, var(--pink-4), var(--pink-5));
+      color: var(--white);
+      box-shadow: 0 10px 24px rgba(201, 54, 121, 0.25);
+    }
+
+    #yesBtn {
+      position: absolute;
+      left: 12%;
+      top: 58px;
+    }
+
+    #noBtn {
+      position: fixed;
+      z-index: 9999;
+      left: 62vw;
+      top: 58vh;
+      background: linear-gradient(135deg, #b99ae3, var(--purple));
+      color: var(--white);
+      box-shadow: 0 10px 24px rgba(154, 106, 216, 0.22);
+      transition: left 0.1s linear, top 0.1s linear;
+      will-change: left, top;
+    }
+
+    .activity-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin: 22px 0;
+      text-align: left;
+    }
+
+    .activity-option {
+      display: block;
+      position: relative;
+    }
+
+    .activity-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .activity-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 88px;
+      padding: 15px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #fff8fc, #ffe6f1);
+      border: 2px solid transparent;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(201, 54, 121, 0.08);
+      transition: 0.2s ease;
+    }
+
+    .activity-option input:checked + .activity-card {
+      border-color: var(--pink-5);
+      background: linear-gradient(135deg, #ffd6e8, #f0dcff);
+      box-shadow: 0 10px 22px rgba(201, 54, 121, 0.16);
+    }
+
+    .activity-icon {
+      font-size: 30px;
+      flex: 0 0 auto;
+    }
+
+    .activity-name {
+      display: block;
+      font-weight: 800;
+      color: var(--pink-5);
+      line-height: 1.2;
+    }
+
+    .activity-note {
+      display: block;
+      margin-top: 4px;
+      font-size: 13px;
+      color: #865a70;
+      line-height: 1.3;
+    }
+
+    .message {
+      margin-top: 22px;
+      padding: 22px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #ffe0ee, #eadcff);
+      color: var(--pink-5);
+      font-size: clamp(18px, 4.6vw, 21px);
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 620px) {
+      body {
+        padding:
+          calc(10px + var(--safe-top))
+          calc(10px + var(--safe-right))
+          calc(10px + var(--safe-bottom))
+          calc(10px + var(--safe-left));
+      }
+
+      .wrap {
+        min-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 20px);
+        place-items: start center;
+      }
+
+      .card {
+        border-radius: 24px;
+        padding: 22px 15px;
+      }
+
+      .activity-grid {
+        grid-template-columns: 1fr;
+        gap: 11px;
+      }
+
+      .activity-card {
+        min-height: 78px;
+      }
+
+      #yesBtn {
+        left: 12%;
+        top: 60px;
+      }
+
+      #noBtn {
+        left: 62vw;
+        top: 62vh;
+      }
+    }
+
+    @media (max-width: 380px) {
+      button {
+        font-size: 16px;
+        padding: 13px 20px;
+      }
+
+      #yesBtn {
+        left: 8%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <main class="card">
+      <div class="content">
+        <section id="welcomeScreen" class="screen active">
+          <div class="emoji">💗✨</div>
+          <h1>Bestie Hangout?</h1>
+          <p class="subtitle">Do you want to hang out with me?</p>
+
+          <div class="question-box">
+            <h2>Select Yes or No</h2>
+
+            <div class="button-area">
+              <button id="yesBtn" type="button">Yes 💕</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="activityScreen" class="screen">
+          <div class="emoji">🎀🩷</div>
+          <h1>Choose Our Activity</h1>
+          <p class="subtitle">Tap one activity, then confirm your choice.</p>
+
+          <div class="activity-grid">
+            <label class="activity-option">
+              <input type="radio" name="activity" value="Sleepover & Movie Night" />
+              <span class="activity-card">
+                <span class="activity-icon">🍿</span>
+                <span>
+                  <span class="activity-name">Sleepover & Movie Night</span>
+                  <span class="activity-note">Movies, snacks and bestie time</span>
+                </span>
+              </span>
+            </label>
+
+            <label class="activity-option">
+              <input type="radio" name="activity" value="Lunch Date" />
+              <span class="activity-card">
+                <span class="activity-icon">🍝</span>
+                <span>
+                  <span class="activity-name">Lunch Date</span>
+                  <span class="activity-note">Good food and a long catch-up</span>
+                </span>
+              </span>
+            </label>
+
+            <label class="activity-option">
+              <input type="radio" name="activity" value="Go Clubbing" />
+              <span class="activity-card">
+                <span class="activity-icon">💃</span>
+                <span>
+                  <span class="activity-name">Go Clubbing</span>
+                  <span class="activity-note">Music, dancing and fun vibes</span>
+                </span>
+              </span>
+            </label>
+
+            <label class="activity-option">
+              <input type="radio" name="activity" value="Go Outside for a Date" />
+              <span class="activity-card">
+                <span class="activity-icon">🌸</span>
+                <span>
+                  <span class="activity-name">Go Outside for a Date</span>
+                  <span class="activity-note">Fresh air, photos and quality time</span>
+                </span>
+              </span>
+            </label>
+
+            <label class="activity-option">
+              <input type="radio" name="activity" value="Skateboarding" />
+              <span class="activity-card">
+                <span class="activity-icon">🛹</span>
+                <span>
+                  <span class="activity-name">Skateboarding</span>
+                  <span class="activity-note">A playful and active hangout</span>
+                </span>
+              </span>
+            </label>
+
+            <label class="activity-option">
+              <input type="radio" name="activity" value="Coffee and Catch-Up" />
+              <span class="activity-card">
+                <span class="activity-icon">☕</span>
+                <span>
+                  <span class="activity-name">Coffee and Catch-Up</span>
+                  <span class="activity-note">Relax, talk and enjoy the moment</span>
+                </span>
+              </span>
+            </label>
+          </div>
+
+          <button id="confirmBtn" type="button">Confirm Activity 💖</button>
+        </section>
+
+        <section id="resultScreen" class="screen">
+          <div class="emoji">🎉💞</div>
+          <h1>Hangout Accepted!</h1>
+          <div id="resultMessage" class="message"></div>
+          <button id="restartBtn" type="button" style="margin-top: 22px;">
+            Choose Again
+          </button>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <button id="noBtn" type="button" aria-label="No">No 🙈</button>
+
+  <script>
+    const welcomeScreen = document.getElementById("welcomeScreen");
+    const activityScreen = document.getElementById("activityScreen");
+    const resultScreen = document.getElementById("resultScreen");
+
+    const noBtn = document.getElementById("noBtn");
+    const yesBtn = document.getElementById("yesBtn");
+    const confirmBtn = document.getElementById("confirmBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const resultMessage = document.getElementById("resultMessage");
+
+    let lastPointerX = window.innerWidth / 2;
+    let lastPointerY = window.innerHeight / 2;
+
+    function showScreen(target) {
+      document.querySelectorAll(".screen").forEach(screen => {
+        screen.classList.remove("active");
+      });
+
+      target.classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function moveNoButtonAway(pointerX, pointerY, forceRandom = false) {
+      if (!welcomeScreen.classList.contains("active")) return;
+
+      const rect = noBtn.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const dx = centerX - pointerX;
+      const dy = centerY - pointerY;
+      const distance = Math.hypot(dx, dy);
+
+      if (forceRandom || distance < 150) {
+        const margin = 8;
+        const maxLeft = window.innerWidth - rect.width - margin;
+        const maxTop = window.innerHeight - rect.height - margin;
+
+        let nextLeft;
+        let nextTop;
+
+        if (forceRandom || distance < 1) {
+          nextLeft = margin + Math.random() * Math.max(1, maxLeft - margin);
+          nextTop = margin + Math.random() * Math.max(1, maxTop - margin);
+        } else {
+          const unitX = dx / distance;
+          const unitY = dy / distance;
+          const step = Math.min(150, Math.max(90, 165 - distance));
+
+          nextLeft = rect.left + unitX * step;
+          nextTop = rect.top + unitY * step;
+
+          if (
+            nextLeft < margin ||
+            nextLeft > maxLeft ||
+            nextTop < margin ||
+            nextTop > maxTop
+          ) {
+            nextLeft = margin + Math.random() * Math.max(1, maxLeft - margin);
+            nextTop = margin + Math.random() * Math.max(1, maxTop - margin);
+          }
+        }
+
+        noBtn.style.left = clamp(nextLeft, margin, maxLeft) + "px";
+        noBtn.style.top = clamp(nextTop, margin, maxTop) + "px";
+      }
+    }
+
+    document.addEventListener("pointermove", event => {
+      lastPointerX = event.clientX;
+      lastPointerY = event.clientY;
+      moveNoButtonAway(event.clientX, event.clientY);
+    });
+
+    noBtn.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      moveNoButtonAway(event.clientX, event.clientY, true);
+    });
+
+    noBtn.addEventListener("click", event => {
+      event.preventDefault();
+    });
+
+    yesBtn.addEventListener("click", () => {
+      noBtn.style.display = "none";
+      showScreen(activityScreen);
+    });
+
+    confirmBtn.addEventListener("click", () => {
+      const selected = document.querySelector('input[name="activity"]:checked');
+
+      if (!selected) {
+        alert("Please select one activity first 💗");
+        return;
+      }
+
+      resultMessage.textContent =
+        `Yay! You selected “${selected.value}”. ` +
+        `Our bestie hangout is officially accepted! 💕`;
+
+      showScreen(resultScreen);
+    });
+
+    restartBtn.addEventListener("click", () => {
+      document.querySelectorAll('input[name="activity"]').forEach(input => {
+        input.checked = false;
+      });
+
+      showScreen(activityScreen);
+    });
+
+    window.addEventListener("resize", () => {
+      if (!welcomeScreen.classList.contains("active")) return;
+
+      const rect = noBtn.getBoundingClientRect();
+      const margin = 8;
+      const maxLeft = window.innerWidth - rect.width - margin;
+      const maxTop = window.innerHeight - rect.height - margin;
+
+      noBtn.style.left = clamp(rect.left, margin, maxLeft) + "px";
+      noBtn.style.top = clamp(rect.top, margin, maxTop) + "px";
+    });
+
+    window.addEventListener("orientationchange", () => {
+      setTimeout(() => {
+        moveNoButtonAway(lastPointerX, lastPointerY, true);
+      }, 250);
+    });
+  </script>
+</body>
+</html>
